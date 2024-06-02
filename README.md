@@ -9,6 +9,8 @@ __ __
 # Infos
 This discord bot was thrown together pretty quickley and hopefully it is alright. It is newer and up to date in terms of discord.py ussage. It uses `app_commands` and `Interactions` over "ctx" for its commands n stuff. 
 __ __
+> If you come across any bugs or issues then please feel free to let me know by creating an issue [here](https://github.com/therealOri/Leveler-Bot/issues/new)!
+
 
 <br>
 <br>
