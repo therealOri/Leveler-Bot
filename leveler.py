@@ -77,6 +77,13 @@ def random_hex_color():
     value =  int(f'0x{color_code}', 16)
     return value
 
+
+
+def load_config():
+    #Load our config when we want.
+    with open('config.toml', 'rb') as fileObj:
+        config = tomllib.load(fileObj) #dictionary/json
+    return config
 # +++++++++++ Normal Functions +++++++++++ #
 
 
@@ -115,7 +122,8 @@ class LevelingSystem:
     def __del__(self):
         self.conn.close()
 
-    def get_cursor(self):
+    def get_cursor(self, guild_id, table_name):
+        self.create_table(self.conn, guild_id, table_name)
         return self.conn.cursor()
 
     def load_config(self):
@@ -129,7 +137,9 @@ class LevelingSystem:
         if channel in ignore_channels: #ignore messages sent in certain channels in your guild.
             return
 
-        c = self.get_cursor()
+        guild_id = message.guild.id
+        table_name = f"guild_{guild_id}"
+        c = self.get_cursor(guild_id, table_name)
         level = 0
         exp = 0
 
@@ -141,14 +151,14 @@ class LevelingSystem:
 
 
         try:
-            res = c.execute("SELECT user_id, level, exp FROM lvls WHERE user_id=?", (user,))
+            res = c.execute(f"SELECT user_id, level, exp FROM {table_name} WHERE user_id=?", (user,))
             user_data = res.fetchone()
         except sqlite3.Error as e:
             user_data = None
 
         if user_data is None:
             row = [user, level, exp]  # defaults
-            c.execute("INSERT INTO lvls VALUES (?, ?, ?)", row)
+            c.execute(f"INSERT INTO {table_name} VALUES (?, ?, ?)", row)
             self.conn.commit()
             return
         else:
@@ -179,7 +189,7 @@ class LevelingSystem:
                     if updated_exp >= milestone_exp:
                         new_level = int(milestone_lvl.split()[1])
                         if new_level > current_level:
-                            c.execute("UPDATE lvls SET exp=?, level=? WHERE user_id=?", (updated_exp, new_level, user,))
+                            c.execute(f"UPDATE {table_name} SET exp=?, level=? WHERE user_id=?", (updated_exp, new_level, user,))
                             self.conn.commit()
 
                             rnd_hex = self.random_hex_color()
@@ -195,7 +205,7 @@ class LevelingSystem:
                             await channel.send(embed=level_embed)
                             break
                 else:
-                    c.execute("UPDATE lvls SET exp=? WHERE user_id=?", (updated_exp, user,))
+                    c.execute(f"UPDATE {table_name} SET exp=? WHERE user_id=?", (updated_exp, user,))
                     self.conn.commit()
             except sqlite3.Error as e:
                 print(f"Error updating database: {e}")
@@ -213,6 +223,19 @@ class LevelingSystem:
             color_code += hex_digits[_]
         value =  int(f'0x{color_code}', 16)
         return value
+
+
+    @staticmethod
+    def create_table(conn, guild_id, table_name):
+        c = conn.cursor()
+        c.execute(f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                user_id TEXT,
+                level INTEGER,
+                exp INTEGER
+            )
+        """)
+        conn.commit()
 # +++++++++++ Async Functions, buttons, modals, etc. +++++++++++ #
 
 
