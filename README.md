@@ -30,7 +30,7 @@ pip install -r requirements.txt
 python leveler.py
 ```
 __ __
-Databse Viewer - You can download it [Here](https://sqlitebrowser.org/).
+Database Viewer - You can download it [Here](https://sqlitebrowser.org/).
 
 
 <br />
